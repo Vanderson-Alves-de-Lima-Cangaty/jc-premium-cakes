@@ -54,7 +54,13 @@ export default function FinalizarPage() {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customerName, deliveryMethod, address, paymentMethod }),
+        body: JSON.stringify({
+          items,
+          customerName: customerName.trim() ? customerName.trim() : undefined,
+          deliveryMethod,
+          address: address.trim() ? address.trim() : undefined,
+          paymentMethod
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Erro desconhecido ao finalizar o pedido.");
