@@ -50,18 +50,21 @@ export function computeTotalsCents(items: CartItem[], deliveryMethod: DeliveryMe
 
 export function describeItem(item: CartItem): { title: string; lines: string[] } {
   if (item.kind === "vulcao") {
-    const flavor = CATALOG.vulcao.flavors.find(f => f.id === item.flavorId)?.name ?? "Mini Bolo Vulcão";
+    const flavorFull = CATALOG.vulcao.flavors.find(f => f.id === item.flavorId)?.name ?? "Vulcão";
+    const flavorName = flavorFull.replace(/^Vulcão\s+/i, "").trim();
     const massaLabel = CATALOG.masses.find(m => m.id === item.massa)?.label ?? item.massa;
+
     const addonsNames = item.addons
       .map(id => CATALOG.vulcao.addons.find(a => a.id === id)?.name ?? id)
       .filter(Boolean);
 
     return {
-      title: flavor,
+      title: `Mini Bolo Vulcão — ${flavorName}`,
       lines: [
         `Massa: ${massaLabel}`,
-        `Adicionais: ${addonsNames.length ? addonsNames.join(", ") : "Nenhum"}`,
-        `Qtd: ${clampQty(item.qty)}`
+        `Adicionais: ${addonsNames.length ? addonsNames.join(", ") : "Sem adicionais"}`,
+        `Quantidade: ${clampQty(item.qty)}`,
+        "Granulado: grátis ✅"
       ]
     };
   }
