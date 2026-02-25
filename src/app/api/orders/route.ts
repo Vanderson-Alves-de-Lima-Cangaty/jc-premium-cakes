@@ -7,6 +7,7 @@ import { prisma } from "@/server/db";
 import { generateUniqueOrderCode } from "@/server/orderCode";
 import { sanitizeText } from "@/lib/sanitize";
 import { rateLimit } from "@/server/rateLimit";
+import { normalizeOrderPayload, normalizeTextKey } from "@/server/orderPayload";
 
 export const runtime = "nodejs";
 
@@ -25,28 +26,13 @@ function enforceOrigin(req: Request) {
   if (!origin || origin !== allowed) throw new Error("Origin not allowed");
 }
 
-const norm = (v: unknown) =>
-  typeof v === "string"
-    ? v
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim()
-    : "";
-
-const emptyToUndef = (v: unknown) => {
-  if (typeof v !== "string") return v;
-  const t = v.trim();
-  return t === "" ? undefined : t;
-};
-
 const clampInt = (n: unknown, min: number, max: number, fallback: number) => {
   const x = typeof n === "number" ? n : typeof n === "string" ? Number(n) : NaN;
   if (!Number.isFinite(x)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(x)));
 };
 
-// ---- maps para aceitar "labels" e converter para ids ----
+// ---- maps para aceitar labels e converter para ids ----
 const MASS_BY_ANY = new Map<string, "branca" | "chocolate" | "morango">([
   ["branca", "branca"],
   ["massa branca", "branca"],
@@ -58,37 +44,21 @@ const MASS_BY_ANY = new Map<string, "branca" | "chocolate" | "morango">([
 
 const FLAVOR_BY_ANY = new Map<string, (typeof CATALOG.vulcao.flavors)[number]["id"]>();
 for (const f of CATALOG.vulcao.flavors) {
-  // aceita o id
-  FLAVOR_BY_ANY.set(norm(f.id), f.id);
-  // aceita o nome inteiro ("Vulcão Maracujá")
-  FLAVOR_BY_ANY.set(norm(f.name), f.id);
-  // aceita nome sem prefixo ("Maracujá")
-  FLAVOR_BY_ANY.set(norm(f.name.replace(/^Vulc[aã]o\s+/i, "")), f.id);
+  FLAVOR_BY_ANY.set(normalizeTextKey(f.id), f.id);
+  FLAVOR_BY_ANY.set(normalizeTextKey(f.name), f.id);
+  FLAVOR_BY_ANY.set(normalizeTextKey(f.name.replace(/^Vulc[aã]o\s+/i, "")), f.id);
 }
 
 const ADDON_BY_ANY = new Map<string, (typeof CATALOG.vulcao.addons)[number]["id"]>();
 for (const a of CATALOG.vulcao.addons) {
-  ADDON_BY_ANY.set(norm(a.id), a.id);
-  ADDON_BY_ANY.set(norm(a.name), a.id);
+  ADDON_BY_ANY.set(normalizeTextKey(a.id), a.id);
+  ADDON_BY_ANY.set(normalizeTextKey(a.name), a.id);
 }
 
 const FILLING_BY_ANY = new Map<string, (typeof CATALOG.bolo10.fillings)[number]["id"]>();
 for (const f of CATALOG.bolo10.fillings) {
-  FILLING_BY_ANY.set(norm(f.id), f.id);
-  FILLING_BY_ANY.set(norm(f.name), f.id);
-}
-
-function normalizeDeliveryMethod(v: unknown): "entrega" | "retirada" {
-  const x = norm(v);
-  if (x === "entrega" || x === "retirada") return x;
-  return "retirada";
-}
-
-function normalizePaymentMethod(v: unknown): "pix" | "dinheiro" | "cartao" {
-  const x = norm(v);
-  if (x === "pix" || x === "dinheiro") return x;
-  if (x === "cartao" || x === "cartao de credito" || x === "cartao de debito") return "cartao";
-  return "pix";
+  FILLING_BY_ANY.set(normalizeTextKey(f.id), f.id);
+  FILLING_BY_ANY.set(normalizeTextKey(f.name), f.id);
 }
 
 function normalizeItems(items: unknown): unknown[] {
@@ -97,7 +67,7 @@ function normalizeItems(items: unknown): unknown[] {
     if (!raw || typeof raw !== "object") return raw;
     const it: any = { ...(raw as any) };
 
-    const kindNorm = norm(it.kind);
+    const kindNorm = normalizeTextKey(it.kind);
     const inferredKind =
       kindNorm === "vulcao" || kindNorm === "bolo10"
         ? kindNorm
@@ -110,13 +80,13 @@ function normalizeItems(items: unknown): unknown[] {
     it.kind = inferredKind;
 
     if (it.kind === "vulcao") {
-      it.flavorId = FLAVOR_BY_ANY.get(norm(it.flavorId)) ?? it.flavorId;
-      it.massa = MASS_BY_ANY.get(norm(it.massa)) ?? it.massa;
+      it.flavorId = FLAVOR_BY_ANY.get(normalizeTextKey(it.flavorId)) ?? it.flavorId;
+      it.massa = MASS_BY_ANY.get(normalizeTextKey(it.massa)) ?? it.massa;
 
       const addonsRaw: unknown[] = Array.isArray(it.addons) ? (it.addons as unknown[]) : [];
 
       it.addons = addonsRaw
-        .map((a: unknown) => ADDON_BY_ANY.get(norm(a)) ?? a)
+        .map((a: unknown) => ADDON_BY_ANY.get(normalizeTextKey(a)) ?? a)
         .filter((a: unknown): a is string => typeof a === "string" && a.length > 0);
 
       it.qty = clampInt(it.qty, 1, 20, 1);
@@ -124,10 +94,10 @@ function normalizeItems(items: unknown): unknown[] {
     }
 
     if (it.kind === "bolo10") {
-      it.massa = MASS_BY_ANY.get(norm(it.massa)) ?? it.massa;
-      it.fillingId = FILLING_BY_ANY.get(norm(it.fillingId)) ?? it.fillingId;
+      it.massa = MASS_BY_ANY.get(normalizeTextKey(it.massa)) ?? it.massa;
+      it.fillingId = FILLING_BY_ANY.get(normalizeTextKey(it.fillingId)) ?? it.fillingId;
 
-      const topo = norm(it.topoType);
+      const topo = normalizeTextKey(it.topoType);
       if (topo === "nenhum" || topo === "simples" || topo === "personalizado") it.topoType = topo;
 
       it.qty = clampInt(it.qty, 1, 20, 1);
@@ -149,21 +119,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const normalized: any = (body && typeof body === "object") ? { ...body } : {};
-
-    // normaliza strings vazias
-    normalized.customerName = emptyToUndef(normalized.customerName);
-    normalized.address = emptyToUndef(normalized.address);
-
-    // normaliza enums “bonitos”
-    normalized.deliveryMethod = normalizeDeliveryMethod(normalized.deliveryMethod);
-    normalized.paymentMethod = normalizePaymentMethod(normalized.paymentMethod);
+    const normalized = normalizeOrderPayload(body);
 
     // normaliza itens (aceita labels e converte pra ids)
     normalized.items = normalizeItems(normalized.items);
-
-    // se não for entrega, remove endereço (evita min do schema)
-    if (normalized.deliveryMethod !== "entrega") delete normalized.address;
 
     const parsed = orderRequestSchema.safeParse(normalized);
     if (!parsed.success) {
@@ -182,9 +141,6 @@ export async function POST(req: Request) {
     const customerName = sanitizeText(data.customerName ?? "", 30);
     const address = data.deliveryMethod === "entrega" ? sanitizeText(data.address ?? "", 160) : "";
 
-    if (data.deliveryMethod === "entrega" && !address) {
-      return NextResponse.json({ error: "Endereço é obrigatório para entrega." }, { status: 400 });
-    }
 
     const { subtotalCents, deliveryCents, totalCents } = computeTotalsCents(items, data.deliveryMethod);
     const orderCode = await generateUniqueOrderCode();

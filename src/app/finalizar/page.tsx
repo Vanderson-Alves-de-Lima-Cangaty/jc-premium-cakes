@@ -52,7 +52,13 @@ export default function FinalizarPage() {
     setError(null);
     setLoading(true);
     try {
-      const payload: any = {
+      const payload: {
+        items: typeof items;
+        deliveryMethod: DeliveryMethod;
+        paymentMethod: PaymentMethod;
+        customerName?: string;
+        address?: string;
+      } = {
         items,
         deliveryMethod,
         paymentMethod

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CATALOG } from "@/server/catalog";
+import { emptyToUndefined } from "@/server/orderPayload";
 
 const massaEnum = z.enum(["branca", "chocolate", "morango"]);
 const vulcaoFlavorEnum = z.enum(CATALOG.vulcao.flavors.map(f => f.id) as [string, ...string[]]);
@@ -27,20 +28,18 @@ const cartItemBolo10 = z.object({
   qty: z.coerce.number().int().min(1).max(20).default(1)
 });
 
-const emptyToUndefined = (v: unknown) =>
-  typeof v === "string" && v.trim() === "" ? undefined : v;
 
 export const orderRequestSchema = z
   .object({
     items: z.array(z.union([cartItemVulcao, cartItemBolo10])).min(1).max(30),
     customerName: z.preprocess(
       emptyToUndefined,
-      z.string().min(2, "Nome muito curto").max(60, "Nome muito longo").optional()
+      z.string().min(2, "Nome muito curto").max(50, "Nome muito longo").optional()
     ),
     deliveryMethod: z.enum(["retirada", "entrega"]),
     address: z.preprocess(
       emptyToUndefined,
-      z.string().min(5, "Endereço muito curto").max(200, "Endereço muito longo").optional()
+      z.string().min(8, "Endereço muito curto").max(200, "Endereço muito longo").optional()
     ),
     paymentMethod: z.enum(["pix", "dinheiro", "cartao"])
   })
