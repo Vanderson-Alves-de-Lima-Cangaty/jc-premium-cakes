@@ -2,17 +2,18 @@
 
 import { ArtTile } from "@/components/ArtTile";
 import { Container } from "@/components/Container";
+import { PriceBar } from "@/components/PriceBar";
 import { QtyControl } from "@/components/QtyControl";
 import { useToast } from "@/components/ToastProvider";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { formatMoney } from "@/lib/money";
+import type { CartItem } from "@/server/pricing";
 import { describeItem, lineTotalCents } from "@/server/pricing";
-import { useCartStore, type CartItem } from "@/store/cart";
+import { useCartStore } from "@/store/cart";
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PriceBar } from "@/components/PriceBar";
 
 // Sub-component for rendering a single cart item
 function CartItemCard({
@@ -35,7 +36,7 @@ function CartItemCard({
         <div className="w-full sm:w-24 md:w-32 flex-shrink-0">
           <ArtTile seed={description.title} label={description.title.slice(0, 3)} />
         </div>
-        
+
         {/* Item details */}
         <div className="flex-1 space-y-2">
           <h3 className="font-bold text-foreground">{description.title}</h3>
@@ -46,7 +47,7 @@ function CartItemCard({
             <QtyControl value={item.qty} onChange={onUpdateQty} />
           </div>
         </div>
-        
+
         {/* Price and Remove Button */}
         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-between gap-2 mt-4 sm:mt-0">
           <div className="text-lg font-bold text-foreground">{formatMoney(total)}</div>
@@ -100,7 +101,7 @@ export default function CartPage() {
       </Container>
     );
   }
-  
+
   if (safeItems.length === 0) {
     return (
         <main>
@@ -155,7 +156,7 @@ export default function CartPage() {
           </div>
         </div>
       </Container>
-      
+
       {/* Mobile Price Bar */}
       <PriceBar
         price={
