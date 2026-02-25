@@ -51,10 +51,19 @@ export default function FinalizarPage() {
     setError(null);
     setLoading(true);
     try {
+      const normalizedCustomerName = customerName.trim();
+      const normalizedAddress = address.trim();
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customerName, deliveryMethod, address, paymentMethod }),
+        body: JSON.stringify({
+          items,
+          customerName: normalizedCustomerName.length >= 2 ? normalizedCustomerName : undefined,
+          deliveryMethod,
+          address: deliveryMethod === "entrega" && normalizedAddress ? normalizedAddress : undefined,
+          paymentMethod
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Erro desconhecido ao finalizar o pedido.");
