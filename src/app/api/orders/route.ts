@@ -103,10 +103,11 @@ function normalizeItems(items: unknown): unknown[] {
       it.flavorId = FLAVOR_BY_ANY.get(norm(it.flavorId)) ?? it.flavorId;
       it.massa = MASS_BY_ANY.get(norm(it.massa)) ?? it.massa;
 
-      const addonsRaw = Array.isArray(it.addons) ? it.addons : [];
+      const addonsRaw: unknown[] = Array.isArray(it.addons) ? (it.addons as unknown[]) : [];
+
       it.addons = addonsRaw
-        .map((a) => ADDON_BY_ANY.get(norm(a)) ?? a)
-        .filter((a) => typeof a === "string" && a.length > 0);
+        .map((a: unknown) => ADDON_BY_ANY.get(norm(a)) ?? a)
+        .filter((a: unknown): a is string => typeof a === "string" && a.length > 0);
 
       it.qty = clampInt(it.qty, 1, 20, 1);
       return it;
