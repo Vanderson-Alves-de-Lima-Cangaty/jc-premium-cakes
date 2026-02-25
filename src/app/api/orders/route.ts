@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { orderRequestSchema } from "@/server/validation";
-import { computeTotalsCents } from "@/server/pricing";
-import { buildWhatsappMessage } from "@/server/message";
+import { sanitizeText } from "@/lib/sanitize";
 import { getWhatsappNumber } from "@/server/catalog";
 import { prisma } from "@/server/db";
+import { buildWhatsappMessage } from "@/server/message";
 import { generateUniqueOrderCode } from "@/server/orderCode";
-import { sanitizeText } from "@/lib/sanitize";
+import { computeTotalsCents, type CartItem } from "@/server/pricing";
 import { rateLimit } from "@/server/rateLimit";
+import { orderRequestSchema } from "@/server/validation";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -34,30 +34,39 @@ export async function POST(req: Request) {
     const ip = getIp(req);
     const result = await rateLimit(`orders:${ip}`, 20, 60_000); // 20/min por IP
     if (!result.success) {
-      return NextResponse.json({ error: "Muitas tentativas. Tente novamente em instantes." }, { status: 429 });
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em instantes." },
+        { status: 429 }
+      );
     }
 
     const body = await req.json();
     const parsed = orderRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { error: "Dados inválidos", details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
     const data = parsed.data;
 
+    // ✅ TS FIX: após validação Zod, garantimos o tipo esperado pelo pricing/message
+    const items = data.items as unknown as CartItem[];
+
     const customerName = sanitizeText(data.customerName ?? "", 30);
-    const address = data.deliveryMethod === "entrega" ? sanitizeText(data.address ?? "", 120) : "";
+    const address = data.deliveryMethod === "entrega" ? sanitizeText(data.address ?? "", 160) : "";
 
     if (data.deliveryMethod === "entrega" && !address) {
       return NextResponse.json({ error: "Endereço é obrigatório para entrega." }, { status: 400 });
     }
 
-    const { subtotalCents, deliveryCents, totalCents } = computeTotalsCents(data.items, data.deliveryMethod);
+    const { subtotalCents, deliveryCents, totalCents } = computeTotalsCents(items, data.deliveryMethod);
     const orderCode = await generateUniqueOrderCode();
 
     const message = buildWhatsappMessage({
       orderCode,
-      items: data.items,
+      items,
       customerName,
       deliveryMethod: data.deliveryMethod,
       address,
@@ -74,7 +83,7 @@ export async function POST(req: Request) {
       data: {
         code: orderCode,
         totalCents,
-        payloadJson: JSON.stringify({ items: data.items, subtotalCents, deliveryCents, totalCents }),
+        payloadJson: JSON.stringify({ items, subtotalCents, deliveryCents, totalCents }),
         customerName: customerName || null,
         address: address || null,
         deliveryMethod: data.deliveryMethod,
