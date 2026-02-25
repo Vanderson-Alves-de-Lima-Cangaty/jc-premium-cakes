@@ -23,12 +23,33 @@ const cartItemBolo10 = z.object({
   qty: z.number().int().min(1).max(20)
 });
 
-export const orderRequestSchema = z.object({
-  items: z.array(z.union([cartItemVulcao, cartItemBolo10])).min(1).max(30),
-  customerName: z.string().min(2, "Nome muito curto").max(50, "Nome muito longo").optional(),
-  deliveryMethod: z.enum(["retirada", "entrega"]),
-  address: z.string().min(2, "Endereço muito curto").max(150, "Endereço muito longo").optional(),
-  paymentMethod: z.enum(["pix", "dinheiro", "cartao"])
-});
+const optionalTrimmedString = (max: number) =>
+  z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      if (!trimmed || trimmed.length < 2) return undefined;
+      return trimmed;
+    },
+    z.string().min(2).max(max).optional()
+  );
+
+export const orderRequestSchema = z
+  .object({
+    items: z.array(z.union([cartItemVulcao, cartItemBolo10])).min(1).max(30),
+    customerName: optionalTrimmedString(50),
+    deliveryMethod: z.enum(["retirada", "entrega"]),
+    address: optionalTrimmedString(150),
+    paymentMethod: z.enum(["pix", "dinheiro", "cartao"])
+  })
+  .superRefine((data, ctx) => {
+    if (data.deliveryMethod === "entrega" && !data.address) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["address"],
+        message: "Endereço é obrigatório para entrega"
+      });
+    }
+  });
 
 export type OrderRequest = z.infer<typeof orderRequestSchema>;
