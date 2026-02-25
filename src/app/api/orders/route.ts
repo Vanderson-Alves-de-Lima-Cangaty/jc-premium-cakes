@@ -41,7 +41,35 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const parsed = orderRequestSchema.safeParse(body);
+
+    // Normaliza payload para não dar 400 por "" / maiúsculas / acentos
+    const normalized: any = (body && typeof body === "object") ? { ...body } : {};
+
+    const cleanStr = (v: any) => (typeof v === "string" ? v.trim() : v);
+
+    // strings vazias -> undefined (pra bater com optional)
+    normalized.customerName = cleanStr(normalized.customerName);
+    if (normalized.customerName === "") delete normalized.customerName;
+
+    normalized.address = cleanStr(normalized.address);
+    if (normalized.address === "") delete normalized.address;
+
+    // normalizar enums (aceita "Entrega", "Retirada", "Cartão", "cartão", "PIX" etc.)
+    const norm = (v: any) =>
+      typeof v === "string"
+        ? v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+        : v;
+
+    const dm = norm(normalized.deliveryMethod);
+    if (dm === "entrega" || dm === "retirada") normalized.deliveryMethod = dm;
+
+    const pm = norm(normalized.paymentMethod);
+    if (pm === "pix" || pm === "dinheiro" || pm === "cartao") normalized.paymentMethod = pm;
+
+    // se não for entrega, nunca validar endereço
+    if (normalized.deliveryMethod !== "entrega") delete normalized.address;
+
+    const parsed = orderRequestSchema.safeParse(normalized);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Dados inválidos", details: parsed.error.flatten() },
