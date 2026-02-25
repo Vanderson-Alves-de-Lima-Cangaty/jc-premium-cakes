@@ -6,13 +6,22 @@ const hasUpstash =
 
 const redis = hasUpstash ? Redis.fromEnv() : null;
 
+// Pega o tipo Duration direto do método (evita depender do nome exportado)
+type Duration = Parameters<typeof Ratelimit.fixedWindow>[1];
+
 // Cache por configuração (limit + window) para evitar recriar a cada request
 const limiters = new Map<string, Ratelimit>();
 
-function durationFromMs(ms: number): string {
+function durationFromMs(ms: number): Duration {
   const sec = Math.max(1, Math.round(ms / 1000));
-  if (sec % 60 === 0) return `${sec / 60} m`;
-  return `${sec} s`;
+
+  // Preferir minutos quando der certinho
+  if (sec % 60 === 0) {
+    const m = sec / 60;
+    return `${m} m` as Duration;
+  }
+
+  return `${sec} s` as Duration;
 }
 
 function getLimiter(limit: number, windowMs: number): Ratelimit {
