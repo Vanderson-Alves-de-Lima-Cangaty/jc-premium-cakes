@@ -16,7 +16,7 @@ export function buildWhatsappMessage(params: {
   deliveryCents: number;
   totalCents: number;
 }): string {
-  const name = sanitizeText(params.customerName ?? "", 30);
+  const name = sanitizeText(params.customerName ?? "", 50);
   const address = sanitizeText(params.address ?? "", 160);
 
   const header = `Olá! Quero fazer um pedido na Premiun cakes jc 🍰\n\nPedido: ${params.orderCode}`;
@@ -48,7 +48,13 @@ export function buildWhatsappMessage(params: {
     `Total: ${formatMoney(params.totalCents)}`
   ].join("\n");
 
-  const topperNote = "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp.";
+  const needsTopperNote = params.items.some(
+    (it) => it.kind === "bolo10" && it.topoType !== "nenhum"
+  );
+
+  const topperNote = needsTopperNote
+    ? "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp."
+    : "";
 
   const footer = `\n\n${deliveryLine}\nPagamento: ${payLabel}\n\n${totals}\n\nAtendimento: finais de semana${topperNote}`;
 
