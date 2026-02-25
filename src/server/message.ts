@@ -48,7 +48,13 @@ export function buildWhatsappMessage(params: {
     `Total: ${formatMoney(params.totalCents)}`
   ].join("\n");
 
-  const topperNote = "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp.";
+  const needsTopperNote = params.items.some(
+    (it) => it.kind === "bolo10" && it.topoType !== "nenhum"
+  );
+
+  const topperNote = needsTopperNote
+    ? "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp."
+    : "";
 
   const footer = `\n\n${deliveryLine}\nPagamento: ${payLabel}\n\n${totals}\n\nAtendimento: finais de semana${topperNote}`;
 
