@@ -51,14 +51,17 @@ export default function FinalizarPage() {
     setError(null);
     setLoading(true);
     try {
+      const normalizedCustomerName = customerName.trim();
+      const normalizedAddress = address.trim();
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items,
-          customerName: customerName.trim() ? customerName.trim() : undefined,
+          customerName: normalizedCustomerName.length >= 2 ? normalizedCustomerName : undefined,
           deliveryMethod,
-          address: address.trim() ? address.trim() : undefined,
+          address: deliveryMethod === "entrega" && normalizedAddress ? normalizedAddress : undefined,
           paymentMethod
         }),
       });
