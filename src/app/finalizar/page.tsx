@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { formatMoney } from "@/lib/money";
 import { describeItem, lineTotalCents } from "@/server/pricing";
+import { orderRequestSchema } from "@/server/validation";
 import { useCartStore } from "@/store/cart";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -51,10 +52,26 @@ export default function FinalizarPage() {
     setError(null);
     setLoading(true);
     try {
+      const payload = {
+        items,
+        customerName: customerName.trim() ? customerName.trim() : undefined,
+        deliveryMethod,
+        paymentMethod,
+        ...(deliveryMethod === "entrega"
+          ? { address: address.trim() ? address.trim() : undefined }
+          : {})
+      };
+
+      const preflight = orderRequestSchema.safeParse(payload);
+      if (!preflight.success) {
+        const issue = preflight.error.issues[0];
+        throw new Error(issue?.message ?? "Dados inválidos. Revise seu pedido antes de continuar.");
+      }
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customerName, deliveryMethod, address, paymentMethod }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Erro desconhecido ao finalizar o pedido.");
