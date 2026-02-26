@@ -13,6 +13,7 @@ import { useCartStore } from "@/store/cart";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { orderRequestSchema } from "@/shared/validation/orderRequest";
 
 type DeliveryMethod = "retirada" | "entrega";
 type PaymentMethod = "pix" | "dinheiro" | "cartao";
