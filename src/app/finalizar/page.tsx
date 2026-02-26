@@ -47,30 +47,58 @@ export default function FinalizarPage() {
     return false;
   }, [isMounted, items.length, deliveryMethod, address]);
 
-  async function handleFinish() {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customerName, deliveryMethod, address, paymentMethod }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Erro desconhecido ao finalizar o pedido.");
+ async function handleFinish() {
+  setError(null);
+  setLoading(true);
 
-      clear();
-      toast.success("Pedido gerado! Abrindo WhatsApp...");
-      window.location.href = data.waUrl;
+  try {
+    const payload: {
+      items: typeof items;
+      deliveryMethod: DeliveryMethod;
+      paymentMethod: PaymentMethod;
+      customerName?: string;
+      address?: string;
+    } = {
+      items,
+      deliveryMethod,
+      paymentMethod
+    };
 
-    } catch (e: any) {
-      const msg = e.message ?? "Erro";
-      setError(msg);
-      toast.error("Falha ao finalizar", msg);
-    } finally {
-      setLoading(false);
+    const name = customerName.trim();
+    if (name) payload.customerName = name;
+
+    if (deliveryMethod === "entrega") {
+      const addr = address.trim();
+      if (addr) payload.address = addr;
     }
+
+    // valida antes de enviar (pra dar erro bonito na UI)
+    const preflight = orderRequestSchema.safeParse(payload);
+    if (!preflight.success) {
+      const issue = preflight.error.issues[0];
+      throw new Error(issue?.message ?? "Dados inválidos. Revise seu pedido.");
+    }
+
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error ?? "Erro desconhecido ao finalizar o pedido.");
+
+    clear();
+    toast.success("Pedido gerado! Abrindo WhatsApp...");
+    window.location.href = data.waUrl;
+  } catch (e: any) {
+    const msg = e?.message ?? "Erro";
+    setError(msg);
+    toast.error("Falha ao finalizar", msg);
+  } finally {
+    setLoading(false);
   }
+}
 
   if (!isMounted) return <Container className="py-10"><Card className="p-10 text-center"><h2 className="text-xl font-bold">Carregando...</h2></Card></Container>;
 
