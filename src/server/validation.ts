@@ -31,4 +31,4 @@ export const orderRequestSchema = z.object({
   paymentMethod: z.enum(["pix", "dinheiro", "cartao"])
 });
 
-export type OrderRequest = z.infer<typeof orderRequestSchema>;
+export { orderRequestSchema, type OrderRequest } from "@/shared/validation/orderRequest";
