@@ -7,6 +7,7 @@ import { computeTotalsCents, type CartItem } from "@/server/pricing";
 import { rateLimit } from "@/server/rateLimit";
 import { orderRequestSchema } from "@/server/validation";
 import { NextResponse } from "next/server";
+import { orderRequestSchema } from "@/shared/validation/orderRequest";
 
 export const runtime = "nodejs";
 
