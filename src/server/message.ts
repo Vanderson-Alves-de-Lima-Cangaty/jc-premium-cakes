@@ -5,6 +5,8 @@ import { describeItem, type CartItem } from "@/server/pricing";
 export type DeliveryMethod = "retirada" | "entrega";
 export type PaymentMethod = "pix" | "dinheiro" | "cartao";
 
+const PICKUP_ADDRESS = "Santa Luzia, Av. Miguel Hatzinakis, 2384";
+
 export function buildWhatsappMessage(params: {
   orderCode: string;
   items: CartItem[];
@@ -16,8 +18,8 @@ export function buildWhatsappMessage(params: {
   deliveryCents: number;
   totalCents: number;
 }): string {
-  const name = sanitizeText(params.customerName ?? "", 30);
-  const address = sanitizeText(params.address ?? "", 160);
+  const name = sanitizeText(params.customerName ?? "", 50);
+  const address = sanitizeText(params.address ?? "", 200);
 
   const header = `Olá! Quero fazer um pedido na Premiun cakes jc 🍰\n\nPedido: ${params.orderCode}`;
   const who = name ? `\nCliente: ${name}` : "";
@@ -30,12 +32,10 @@ export function buildWhatsappMessage(params: {
     })
     .join("\n\n");
 
-  const PICKUP_LOCATION = "Santa Luzia, Av. Miguel Hatzinakis, 2384";
-
-const deliveryLine =
-  params.deliveryMethod === "entrega"
-    ? `Entrega/Retirada: Entrega\nEndereço: ${address || "(informar endereço)"}`
-    : `Entrega/Retirada: Retirada\nLocal: ${PICKUP_LOCATION}`;
+  const deliveryLine =
+    params.deliveryMethod === "entrega"
+      ? `Entrega/Retirada: Entrega\nEndereço: ${address || "(informar endereço)"}`
+      : `Entrega/Retirada: Retirada\nLocal: ${PICKUP_ADDRESS}`;
 
   const payLabel =
     params.paymentMethod === "pix"
@@ -50,7 +50,10 @@ const deliveryLine =
     `Total: ${formatMoney(params.totalCents)}`
   ].join("\n");
 
-  const topperNote = "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp.";
+  const needsTopperNote = params.items.some((it) => it.kind === "bolo10" && it.topoType !== "nenhum");
+  const topperNote = needsTopperNote
+    ? "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp."
+    : "";
 
   const footer = `\n\n${deliveryLine}\nPagamento: ${payLabel}\n\n${totals}\n\nAtendimento: finais de semana${topperNote}`;
 
