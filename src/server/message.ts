@@ -30,10 +30,12 @@ export function buildWhatsappMessage(params: {
     })
     .join("\n\n");
 
-  const deliveryLine =
-    params.deliveryMethod === "entrega"
-      ? `Entrega/Retirada: Entrega\nEndereço: ${address || "(informar endereço)"}`
-      : "Entrega/Retirada: Retirada";
+  const PICKUP_LOCATION = "Santa Luzia, Av. Miguel Hatzinakis, 2384";
+
+const deliveryLine =
+  params.deliveryMethod === "entrega"
+    ? `Entrega/Retirada: Entrega\nEndereço: ${address || "(informar endereço)"}`
+    : `Entrega/Retirada: Retirada\nLocal: ${PICKUP_LOCATION}`;
 
   const payLabel =
     params.paymentMethod === "pix"
