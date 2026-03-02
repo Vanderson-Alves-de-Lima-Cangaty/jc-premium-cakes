@@ -2,8 +2,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CartItem } from "@/server/pricing";
-import { lineTotalCents } from "@/server/pricing";
+import type { CartItem } from "@/shared/pricing";
+import { lineTotalCents } from "@/shared/pricing";
 
 type CartState = {
   items: CartItem[];

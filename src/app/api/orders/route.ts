@@ -1,9 +1,9 @@
 import { sanitizeText } from "@/lib/sanitize";
-import { getWhatsappNumber } from "@/server/catalog";
+import { getWhatsappNumber } from "@/shared/catalog";
 import { prisma } from "@/server/db";
 import { buildWhatsappMessage } from "@/server/message";
 import { generateUniqueOrderCode } from "@/server/orderCode";
-import { computeTotalsCents, type CartItem } from "@/server/pricing";
+import { computeTotalsCents, type CartItem } from "@/shared/pricing";
 import { rateLimit } from "@/server/rateLimit";
 import { NextResponse } from "next/server";
 import { orderRequestSchema } from "@/shared/validation/orderRequest";
@@ -98,8 +98,14 @@ export async function POST(req: Request) {
       waUrl
     });
   } catch (err: any) {
-    const msg = typeof err?.message === "string" ? err.message : "Erro inesperado";
-    const status = msg.includes("Origin not allowed") ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    console.error("[ORDERS_API_ERROR]:", err);
+    
+    const isOriginError = err?.message?.includes("Origin not allowed");
+    const status = isOriginError ? 403 : 500;
+    const clientMessage = isOriginError 
+      ? err.message 
+      : "Ocorreu um erro ao processar seu pedido. Tente novamente em instantes.";
+
+    return NextResponse.json({ error: clientMessage }, { status });
   }
 }

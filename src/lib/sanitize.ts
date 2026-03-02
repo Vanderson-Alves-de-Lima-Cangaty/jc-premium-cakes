@@ -14,8 +14,8 @@ export function sanitizeText(input: string, maxLen: number): string {
   // Limita tamanho
   const clipped = normalized.slice(0, maxLen);
 
-  // Permite letras (incl. acentos), números, espaços e pontuação básica
-  const safe = clipped.replace(/[^a-zA-Z0-9À-ú\s!?.;:,@\-()\[\]#]/g, "");
+  // Permite letras (incl. acentos), números, espaços e pontuação básica + símbolos de endereço
+  const safe = clipped.replace(/[^a-zA-Z0-9À-ú\s!?.;:,@\-\/&'ºª()\[\]#]/g, "");
 
   return safe.trim();
 }

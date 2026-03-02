@@ -42,8 +42,8 @@ export function ArtTile({ seed, label, className, ...props }: ArtTileProps) {
       )}
       {...props}
     >
-      {/* Subtle highlights */}
-      <div className="absolute inset-0 opacity-80 [background:radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.1),transparent_45%),radial-gradient(circle_at_70%_70%,hsl(var(--primary)/0.08),transparent_40%)]" />
+      {/* Subtle highlights - SIMPLIFIED FOR PERFORMANCE DIAGNOSIS */}
+      <div className="absolute inset-0 opacity-80 [background:radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
 
       {/* Animated shine effect on hover of a parent with "group" class */}
       <div className="absolute inset-0 -translate-x-full rotate-[-30deg] bg-gradient-to-r from-transparent via-primary/10 to-transparent transition-transform duration-700 ease-in-out-circ group-hover:translate-x-full" />

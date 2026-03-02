@@ -8,7 +8,7 @@ import {
   type Massa,
   type VulcaoAddonId,
   type VulcaoFlavorId,
-} from "@/server/catalog";
+} from "@/shared/catalog";
 import { OptionGrid } from "@/components/OptionGrid";
 import { Button } from "@/components/ui/Button";
 import { QtyControl } from "@/components/QtyControl";

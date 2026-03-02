@@ -1,6 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { sanitizeText } from "@/lib/sanitize";
-import { describeItem, type CartItem } from "@/server/pricing";
+import { describeItem, type CartItem } from "@/shared/pricing";
 
 export type DeliveryMethod = "retirada" | "entrega";
 export type PaymentMethod = "pix" | "dinheiro" | "cartao";
@@ -50,7 +50,7 @@ export function buildWhatsappMessage(params: {
     `Total: ${formatMoney(params.totalCents)}`
   ].join("\n");
 
-  const needsTopperNote = params.items.some((it) => it.kind === "bolo10" && it.topoType !== "nenhum");
+  const needsTopperNote = params.items.some((it) => it.kind === "bolo10");
   const topperNote = needsTopperNote
     ? "\n\nObs.: Tema do topo (simples/personalizado) a combinar aqui no WhatsApp."
     : "";

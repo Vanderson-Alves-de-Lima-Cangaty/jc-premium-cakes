@@ -61,12 +61,17 @@ export function OptionGrid<T extends string>(props: OptionGridProps<T>) {
           >
             <Card
               className={cn(
-                "p-4 transition-all duration-150 ease-in-out group-hover:-translate-y-px group-hover:shadow-medium",
+                "relative p-4 transition-all duration-150 ease-in-out group-hover:-translate-y-px group-hover:shadow-medium",
                 isActive
                   ? "border-primary ring-2 ring-primary/50"
                   : "border-border"
               )}
             >
+              {isActive && (
+                <div className="absolute right-2 top-2 text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              )}
               <div className="font-semibold text-foreground">{option.label}</div>
               {option.description && (
                 <div className="text-sm text-muted-foreground">

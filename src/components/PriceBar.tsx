@@ -15,7 +15,7 @@ interface PriceBarProps {
 export function PriceBar({ price, controls, action }: PriceBarProps) {
   return (
     <div className="pointer-events-none fixed bottom-0 left-0 z-50 w-full md:hidden">
-      <div className="pointer-events-auto border-t border-border bg-background/95 p-4 backdrop-blur-sm">
+      <div className="pointer-events-auto border-t border-border bg-background/95 p-4 pb-[calc(1rem+var(--safe-area-inset-bottom,0px))] backdrop-blur-sm">
         <Container className="flex items-center justify-between gap-4">
           <div className="flex-1">{price}</div>
           {controls && <div className="flex-shrink-0">{controls}</div>}

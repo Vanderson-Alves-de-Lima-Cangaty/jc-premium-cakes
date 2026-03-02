@@ -1,4 +1,4 @@
-import { CATALOG, getDeliveryFeeCents, type TopoType, type VulcaoAddonId, type VulcaoFlavorId, type Massa } from "@/server/catalog";
+import { CATALOG, getDeliveryFeeCents, type CoberturaBolo10Id, type VulcaoAddonId, type VulcaoFlavorId, type Massa } from "./catalog";
 
 export type CartItemVulcao = {
   kind: "vulcao";
@@ -12,7 +12,7 @@ export type CartItemBolo10 = {
   kind: "bolo10";
   massa: Massa;
   fillingId: (typeof CATALOG.bolo10.fillings)[number]["id"];
-  topoType: TopoType;
+  coberturaId: CoberturaBolo10Id;
   qty: number;
 };
 
@@ -37,8 +37,8 @@ export function lineTotalCents(item: CartItem): number {
   }
 
   const base = CATALOG.bolo10.basePriceCents;
-  const topoAdd = CATALOG.bolo10.topo[item.topoType] ?? 0;
-  return (base + topoAdd) * clampQty(item.qty);
+  const coberturaAdd = CATALOG.bolo10.coberturas.find(c => c.id === item.coberturaId)?.priceCents ?? 0;
+  return (base + coberturaAdd) * clampQty(item.qty);
 }
 
 export function computeTotalsCents(items: CartItem[], deliveryMethod: DeliveryMethod): { subtotalCents: number; deliveryCents: number; totalCents: number } {
@@ -68,15 +68,15 @@ export function describeItem(item: CartItem): { title: string; lines: string[] }
 
   const massaLabel = CATALOG.masses.find(m => m.id === item.massa)?.label ?? item.massa;
   const filling = CATALOG.bolo10.fillings.find(f => f.id === item.fillingId)?.name ?? item.fillingId;
-  const topoLabel =
-    item.topoType === "nenhum" ? "Sem topo" : item.topoType === "simples" ? "Topo simples (tema no WhatsApp)" : "Topo personalizado (tema no WhatsApp)";
+  const cobertura = CATALOG.bolo10.coberturas.find(c => c.id === item.coberturaId)?.name ?? item.coberturaId;
 
   return {
     title: "Bolo 10 pessoas",
     lines: [
       `Massa: ${massaLabel}`,
       `Recheio: ${filling}`,
-      `Topo: ${topoLabel}`,
+      `Cobertura: ${cobertura}`,
+      "Topo de bolo: A combinar (via WhatsApp)",
       `Qtd: ${clampQty(item.qty)}`
     ]
   };

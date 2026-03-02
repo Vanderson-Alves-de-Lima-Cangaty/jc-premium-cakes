@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Container } from "@/components/Container";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/ProductCard";
-import { CATALOG } from "@/server/catalog";
+import { CATALOG } from "@/shared/catalog";
 
 // Helper component for feature highlights
 const Feature = ({ title, children }: { title: string, children: React.ReactNode }) => (

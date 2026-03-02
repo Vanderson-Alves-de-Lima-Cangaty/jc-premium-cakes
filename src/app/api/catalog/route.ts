@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CATALOG } from "@/server/catalog";
+import { CATALOG } from "@/shared/catalog";
 
 export const runtime = "nodejs";
 

@@ -1,6 +1,6 @@
 import { Container } from "@/components/Container";
 import { ProductCard } from "@/components/ProductCard";
-import { CATALOG } from "@/server/catalog";
+import { CATALOG } from "@/shared/catalog";
 import { formatMoney } from "@/lib/money";
 
 export default function VulcaoPage() {

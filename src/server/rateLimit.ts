@@ -68,7 +68,11 @@ export async function rateLimit(
       reset: res.reset
     };
   } catch (err) {
-    console.warn("[rateLimit] falhou (liberando request):", err);
+    if (process.env.NODE_ENV === "production") {
+      console.error("[CRITICAL_RATE_LIMIT_FAILURE]: Redis/Upstash falhou. Liberando requisição para não bloquear vendas, mas verifique a infra imediatamente.", err);
+    } else {
+      console.warn("[rateLimit] falhou (liberando request):", err);
+    }
     return {
       success: true,
       limit,

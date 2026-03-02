@@ -1,3 +1,5 @@
+import { env } from "@/lib/env";
+
 export type VulcaoFlavorId =
   | "chocolate"
   | "nesquik"
@@ -10,7 +12,7 @@ export type Massa = "branca" | "chocolate" | "morango";
 
 export type VulcaoAddonId = "kitkat" | "morango_fresco" | "brigadeiros" | "granulado";
 
-export type TopoType = "nenhum" | "simples" | "personalizado";
+export type CoberturaBolo10Id = "calda_chocolate" | "chantilly";
 
 export const CATALOG = {
   masses: [
@@ -36,13 +38,11 @@ export const CATALOG = {
     ] as const
   },
   bolo10: {
-    // 10 pessoas
-    basePriceCents: 6000, // massa + recheio + chantilly
-    topo: {
-      nenhum: 0,
-      simples: 1500, // total 75,00
-      personalizado: 3000 // total 90,00
-    },
+    basePriceCents: 6000,
+    coberturas: [
+      { id: "calda_chocolate", name: "Calda de Chocolate", priceCents: 0 },
+      { id: "chantilly", name: "Chantilly", priceCents: 0 }
+    ] as const,
     fillings: [
       { id: "maracuja", name: "Maracujá" },
       { id: "ninho", name: "Leite Ninho" },
@@ -57,13 +57,9 @@ export const CATALOG = {
 } as const;
 
 export function getDeliveryFeeCents(): number {
-  const fee = Number(process.env.DELIVERY_FEE_CENTS ?? "500");
-  const promoFree = (process.env.PROMO_FREE_DELIVERY ?? "true").toLowerCase() === "true";
-  return promoFree ? 0 : (Number.isFinite(fee) ? fee : 0);
+  return env.NEXT_PUBLIC_PROMO_FREE_DELIVERY ? 0 : env.NEXT_PUBLIC_DELIVERY_FEE_CENTS;
 }
 
 export function getWhatsappNumber(): string {
-  const num = (process.env.WHATSAPP_NUMBER ?? "5569993471428").replace(/\D/g, "");
-  if (!num) return "5569993471428";
-  return num;
+  return env.NEXT_PUBLIC_WHATSAPP_NUMBER.replace(/\D/g, "");
 }

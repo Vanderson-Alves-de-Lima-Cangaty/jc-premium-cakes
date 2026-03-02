@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { formatMoney } from "@/lib/money";
-import { describeItem, lineTotalCents } from "@/server/pricing";
+import { describeItem, lineTotalCents } from "@/shared/pricing";
+import { getDeliveryFeeCents } from "@/shared/catalog";
 import { useCartStore } from "@/store/cart";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,13 @@ export default function FinalizarPage() {
   useEffect(() => setIsMounted(true), []);
 
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("entrega");
+
+  const deliveryFee = useMemo(() => {
+    return deliveryMethod === "entrega" ? getDeliveryFeeCents() : 0;
+  }, [deliveryMethod]);
+
+  const total = subtotal + deliveryFee;
+
   const [address, setAddress] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
@@ -89,9 +97,12 @@ export default function FinalizarPage() {
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error ?? "Erro desconhecido ao finalizar o pedido.");
 
+    // Salva a URL do WhatsApp para a página de sucesso usar
+    sessionStorage.setItem(`wa_url_${data.orderCode}`, data.waUrl);
+
     clear();
-    toast.success("Pedido gerado! Abrindo WhatsApp...");
-    window.location.href = data.waUrl;
+    toast.success("Pedido gerado com sucesso!");
+    router.push(`/finalizar/sucesso/${data.orderCode}`);
   } catch (e: any) {
     const msg = e?.message ?? "Erro";
     setError(msg);
@@ -165,9 +176,20 @@ export default function FinalizarPage() {
                     )
                 })}
               </div>
+              <div className="space-y-2 border-b border-border pb-4 mb-4 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-foreground">{formatMoney(subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Entrega</span>
+                    <span className="text-foreground">{deliveryFee > 0 ? formatMoney(deliveryFee) : "Grátis"}</span>
+                </div>
+              </div>
+
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span>{formatMoney(subtotal)}</span>
+                <span className="text-primary">{formatMoney(total)}</span>
               </div>
                <Button size="lg" className="mt-6 w-full" onClick={handleFinish} disabled={isDisabled || loading}>
                  {loading ? <Loader2 className="animate-spin" /> : "Gerar Pedido no WhatsApp"}
@@ -181,8 +203,8 @@ export default function FinalizarPage() {
       <PriceBar
         price={
            <div className="text-left">
-            <div className="text-sm text-muted-foreground">Total</div>
-            <div className="text-xl font-extrabold text-foreground">{formatMoney(subtotal)}</div>
+            <div className="text-xs text-muted-foreground">Total com {deliveryMethod === 'entrega' ? 'entrega' : 'retirada'}</div>
+            <div className="text-xl font-extrabold text-foreground">{formatMoney(total)}</div>
           </div>
         }
         action={

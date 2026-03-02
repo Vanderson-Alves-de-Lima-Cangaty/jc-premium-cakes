@@ -25,13 +25,18 @@ const boloFillingEnum = z.enum([
   "abacaxi"
 ]);
 
-const topoTypeEnum = z.enum(["nenhum", "simples", "personalizado"]);
+const coberturaBolo10Enum = z.enum(["calda_chocolate", "chantilly"]);
 
 const cartItemVulcao = z.object({
   kind: z.literal("vulcao"),
   flavorId: vulcaoFlavorEnum,
   massa: massaEnum,
-  addons: z.array(vulcaoAddonEnum).default([]),
+  addons: z
+    .array(vulcaoAddonEnum)
+    .default([])
+    .refine((items) => new Set(items).size === items.length, {
+      message: "Não é permitido selecionar o mesmo adicional mais de uma vez"
+    }),
   qty: z.coerce.number().int().min(1).max(20).default(1)
 });
 
@@ -39,7 +44,7 @@ const cartItemBolo10 = z.object({
   kind: z.literal("bolo10"),
   massa: massaEnum,
   fillingId: boloFillingEnum,
-  topoType: topoTypeEnum.default("nenhum"),
+  coberturaId: coberturaBolo10Enum,
   qty: z.coerce.number().int().min(1).max(20).default(1)
 });
 

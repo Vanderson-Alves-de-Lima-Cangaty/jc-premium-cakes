@@ -1,31 +1,30 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { ArtTile } from "@/components/ArtTile";
 import { Container } from "@/components/Container";
 import { OptionGrid } from "@/components/OptionGrid";
+import { PriceBar } from "@/components/PriceBar";
+import { QtyControl } from "@/components/QtyControl";
+import { useToast } from "@/components/ToastProvider";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { formatMoney } from "@/lib/money";
 import {
   CATALOG,
+  type CoberturaBolo10Id,
   type Massa,
-  type TopoType,
-} from "@/server/catalog";
+} from "@/shared/catalog";
 import { useCartStore } from "@/store/cart";
-import { QtyControl } from "@/components/QtyControl";
-import { formatMoney } from "@/lib/money";
-import { ArtTile } from "@/components/ArtTile";
-import { useToast } from "@/components/ToastProvider";
-import { PriceBar } from "@/components/PriceBar";
-import { Card } from "@/components/ui/Card";
 import { CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useMemo, useState } from "react";
 
-// Removed 'topo' from steps as per user request
-type StepId = "massa" | "recheio" | "revisao";
+type StepId = "massa" | "recheio" | "cobertura" | "revisao"; // Added 'cobertura'
 
 const STEPS: { id: StepId; title: string }[] = [
   { id: "massa", title: "Massa" },
   { id: "recheio", title: "Recheio" },
-  // { id: "topo", title: "Topo" }, // Removed
+  { id: "cobertura", title: "Cobertura" }, // Added 'Cobertura' step
   { id: "revisao", title: "Revisão" },
 ];
 
@@ -72,45 +71,45 @@ export default function Bolo10Page() {
   const [step, setStep] = useState<StepId>("massa");
   const [massa, setMassa] = useState<Massa | null>(null);
   const [fillingId, setFillingId] = useState<(typeof CATALOG.bolo10.fillings)[number]["id"] | null>(null);
-  // topoType is now always 'simples' if topo is selected, otherwise 'nenhum'
-  const [topoType, setTopoType] = useState<TopoType>("simples"); // Default to 'simples' if no choice is given
+  const [coberturaId, setCoberturaId] = useState<CoberturaBolo10Id | null>(null); // New state for cobertura
 
   const [qty, setQty] = useState(1);
-  
+
   const currentStepIndex = STEPS.findIndex(s => s.id === step);
 
   const totalCents = useMemo(() => {
     const base = CATALOG.bolo10.basePriceCents;
-    // Topo price logic simplified: always apply 'simples' topo price if 'simples' is chosen
-    // (or if it's the only option implicitly)
-    const topoPrice = topoType === "simples" ? CATALOG.bolo10.topo.simples : 0;
-    return (base + topoPrice) * qty;
-  }, [topoType, qty]);
+    const coberturaPrice = coberturaId ? CATALOG.bolo10.coberturas.find(c => c.id === coberturaId)?.priceCents ?? 0 : 0;
+    return (base + coberturaPrice) * qty;
+  }, [coberturaId, qty]); // Updated dependencies
 
   const massaOptions = CATALOG.masses.map(m => ({ id: m.id, label: m.label }));
   const fillingOptions = CATALOG.bolo10.fillings.map(f => ({ id: f.id, label: f.name }));
-  
-  // No topoOptions directly displayed to the user for choice
+  const coberturaOptions = CATALOG.bolo10.coberturas.map(c => ({ id: c.id, label: c.name })); // New options
 
   const handleNext = () => {
     if (step === "massa" && massa) setStep("recheio");
-    else if (step === "recheio" && fillingId) setStep("revisao"); // Skip topo step
+    else if (step === "recheio" && fillingId) setStep("cobertura"); // Go to cobertura step
+    else if (step === "cobertura" && coberturaId) setStep("revisao"); // Go to revisao step
   };
-  
+
   const handleBack = () => {
-    if (step === "revisao") setStep("recheio"); // Back to recheio
+    if (step === "revisao") setStep("cobertura"); // Back to cobertura
+    else if (step === "cobertura") setStep("recheio"); // Back to recheio
     else if (step === "recheio") setStep("massa");
   }
 
   const handleAddToCart = () => {
-    if (!massa || !fillingId) return;
-    // If user doesn't explicitly choose 'nenhum' or 'simples' for topo, we default to 'simples' (basic topo is part of the offering)
-    addItem({ kind: "bolo10", massa, fillingId, topoType: topoType, qty }); 
+    if (!massa || !fillingId || !coberturaId) return; // Validate cobertura
+    addItem({ kind: "bolo10", massa, fillingId, coberturaId, qty }); // Pass coberturaId
     toast.success("Adicionado ao carrinho!", "Bolo 10 pessoas");
     router.push("/carrinho");
   };
-  
-  const canGoNext = (step === 'massa' && !!massa) || (step === 'recheio' && !!fillingId); // No topo step to validate
+
+  const canGoNext =
+      (step === 'massa' && !!massa) ||
+      (step === 'recheio' && !!fillingId) ||
+      (step === 'cobertura' && !!coberturaId); // Validate cobertura step
 
   return (
     <main>
@@ -122,24 +121,26 @@ export default function Bolo10Page() {
             <ArtTile seed={`bolo-10-${massa ?? 'base'}`} label="Bolo 10" />
             <h1 className="text-3xl font-extrabold tracking-tighter sm:text-4xl">Bolo 10 pessoas</h1>
             <p className="text-muted-foreground">Monte seu bolo passo a passo. </p>
-            {/* Added instruction for inspiration photos */}
+            {/* Added instruction for inspiration photos and explicit topper info */}
             <p className="text-sm text-muted-foreground">
-                **Personalização:** Para que seu bolo fique perfeito, nos envie fotos ou prints da sua inspiração e do tema desejado via WhatsApp, após finalizar o pedido. Assim, faremos exatamente do jeito que você sonha!
+                **Personalização do Bolo e Topper:** Para que seu bolo fique perfeito, nos envie fotos ou prints da sua inspiração para o bolo e o tema desejado para o topo de bolo via WhatsApp, após finalizar o pedido. Assim, faremos exatamente do jeito que você deseja!
             </p>
             <Card className="p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Massa:</span> 
+                    <span className="text-muted-foreground">Massa:</span>
                     <span className="font-semibold">{massa ? massaOptions.find(m => m.id === massa)?.label : '...'}</span>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Recheio:</span> 
+                    <span className="text-muted-foreground">Recheio:</span>
                     <span className="font-semibold">{fillingId ? fillingOptions.find(f => f.id === fillingId)?.label : '...'}</span>
                 </div>
                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Topo:</span> 
-                    <span className="font-semibold">
-                      Com topo (a combinar no Zap)
-                    </span>
+                    <span className="text-muted-foreground">Cobertura:</span>
+                    <span className="font-semibold">{coberturaId ? coberturaOptions.find(c => c.id === coberturaId)?.label : '...'}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Topo de bolo:</span>
+                    <span className="font-semibold">A combinar via WhatsApp (opicional)</span>
                 </div>
             </Card>
              <div className="hidden md:block">
@@ -156,31 +157,33 @@ export default function Bolo10Page() {
                 const targetIndex = STEPS.findIndex(st => st.id === s);
                 if(targetIndex < currentStepIndex) setStep(s);
                 // The `canGoNext` logic already handles validation for stepping forward
-                else if(targetIndex === (currentStepIndex + 1) && canGoNext) handleNext(); 
+                else if(targetIndex === (currentStepIndex + 1) && canGoNext) handleNext();
             }} />
-            
+
             <div className="min-h-[300px]">
                 {step === 'massa' && <OptionGrid options={massaOptions} value={massa} onChange={setMassa} />}
                 {step === 'recheio' && <OptionGrid options={fillingOptions} value={fillingId} onChange={setFillingId} />}
-                {/* Removed 'topo' selection step */}
+                {step === 'cobertura' && <OptionGrid options={coberturaOptions} value={coberturaId} onChange={setCoberturaId} />} {/* New Cobertura step */}
                 {step === 'revisao' && (
                     <div className="space-y-4">
                         <h2 className="text-xl font-bold">Quase lá!</h2>
                         <p className="text-muted-foreground">Confira os detalhes e a quantidade antes de adicionar ao carrinho.</p>
                          <Card className="p-4 space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Massa:</span> 
+                                <span className="text-muted-foreground">Massa:</span>
                                 <span className="font-semibold">{massa ? massaOptions.find(m => m.id === massa)?.label : '...'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Recheio:</span> 
+                                <span className="text-muted-foreground">Recheio:</span>
                                 <span className="font-semibold">{fillingId ? fillingOptions.find(f => f.id === fillingId)?.label : '...'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Topo:</span> 
-                                <span className="font-semibold">
-                                  Com topo (a combinar no Zap)
-                                </span>
+                                <span className="text-muted-foreground">Cobertura:</span>
+                                <span className="font-semibold">{coberturaId ? coberturaOptions.find(c => c.id === coberturaId)?.label : '...'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Topo de bolo:</span>
+                                <span className="font-semibold">A combinar via WhatsApp (opicional)</span>
                             </div>
                         </Card>
                         <QtyControl value={qty} onChange={setQty} />
@@ -200,7 +203,7 @@ export default function Bolo10Page() {
           </div>
         </div>
       </Container>
-      
+
       {/* Mobile Price Bar */}
       <PriceBar
         price={
@@ -210,9 +213,9 @@ export default function Bolo10Page() {
           </div>
         }
         action={
-            <Button 
-                onClick={step !== 'revisao' ? handleNext : handleAddToCart} 
-                disabled={step !== 'revisao' ? !canGoNext : (!massa || !fillingId)}
+            <Button
+                onClick={step !== 'revisao' ? handleNext : handleAddToCart}
+                disabled={step !== 'revisao' ? !canGoNext : (!massa || !fillingId || !coberturaId)} // Updated disabled prop
             >
                 {step !== 'revisao' ? "Próximo" : "Adicionar"}
             </Button>
