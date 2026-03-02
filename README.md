@@ -177,4 +177,4 @@ Future-ready for:
 
 ## 📄 License
 
-Created by Vanderson Cagaty.
+Created by Vanderson Cangaty.
