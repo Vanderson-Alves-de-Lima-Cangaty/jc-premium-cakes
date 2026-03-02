@@ -37,4 +37,6 @@ pnpm dev
 - Cliente monta pedido no front.
 - Ao finalizar, o front chama `POST /api/orders`.
 - O backend valida, calcula total oficial, gera código do pedido e devolve um link `wa.me` com mensagem pronta.
+##by Vanderson Cangaty
+
 by Vanderson Cangaty
