@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { Container } from "@/components/Container";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle2, MessageCircle, ArrowLeft } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { ArrowLeft, CheckCircle2, MessageCircle } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function SuccessPage() {
   const params = useParams<{ code: string }>();
@@ -30,18 +30,18 @@ export default function SuccessPage() {
             <CheckCircle2 size={48} />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-            Pedido Recebido!
+            Pedido foi Gerado!
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
             Seu código é: <span className="font-bold text-primary">#{params.code}</span>
           </p>
         </div>
-        
+
         <div className="p-8 space-y-6">
           <div className="rounded-lg bg-card border p-4 text-sm space-y-3">
              <p className="font-semibold text-foreground">Próximo passo importante:</p>
              <p className="text-muted-foreground">
-                Clique no botão abaixo para nos enviar os detalhes do seu pedido via WhatsApp. 
+                Clique no botão abaixo para nos enviar os detalhes do seu pedido via WhatsApp.
                 Somente após o envio da mensagem o seu pedido começará a ser preparado.
              </p>
           </div>
@@ -56,7 +56,7 @@ export default function SuccessPage() {
               Voltar para a Loja
             </Button>
           </div>
-          
+
           <p className="text-center text-xs text-muted-foreground">
             Atendimento: Finais de semana. Entraremos em contato para confirmar o pagamento.
           </p>
